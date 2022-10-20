@@ -7,8 +7,8 @@ chrome.action.onClicked.addListener(function (tab) {
 		// 		focused: false,
 		// 		top: 0,
 		// 		left: 0,
-		// 		width: 360,
-		// 		height: 630,
+		// 		// width: 360,
+		// 		// height: 630,
 		// 	},
 		// 	(createdWindow) => {
 		// 		// console.log(createdWindow?.id, "Assigning popup to id");

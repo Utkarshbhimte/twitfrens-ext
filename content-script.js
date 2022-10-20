@@ -38,7 +38,6 @@ const renderListInDrawer = (profilesArray) => {
     `;
 		const MainComponent = `
             <header class="p-4 border-b-2 border-solid mb-12">
-			<div id="close-twitfrens">Close twitfrens</div>
               <div class="w-min flex mx-auto items-center space-x-2">
                 <svg
                   width="41"
@@ -96,8 +95,8 @@ const toggleRightLayout = (shouldOpenTwitFrens) => {
 	);
 	const twimex = document.querySelector("#twemex--container div");
 	const twitfrens = document.getElementById("twitterUserList");
-
-	console.log("removing rest", twitterSearch, twimex);
+	const closeButtonTwitfrens = document.querySelector(".close-button");
+	const modalTwitFrens = document.getElementById("modal");
 
 	if (shouldOpenTwitFrens) {
 		if (twitterSearch) {
@@ -122,6 +121,12 @@ const toggleRightLayout = (shouldOpenTwitFrens) => {
 
 		if (twimex) {
 			twimex.style.visibility = "hidden";
+		}
+		if (closeButtonTwitfrens) {
+			document.body.removeChild(closeButtonTwitfrens);
+		}
+		if (modalTwitFrens) {
+			document.body.removeChild(modalTwitFrens);
 		}
 	}
 };
@@ -158,7 +163,20 @@ chrome.runtime.onMessage.addListener(async function (response, sendResponse) {
 	const Drawer = document.createElement("div");
 	Drawer.className = "sidepanel";
 	Drawer.id = "twitterUserList";
+
+	const Header = document.createElement("div");
+	Header.innerHTML = '<div id="close-twitfrens">Close</div>';
+	Header.onclick = toggleRightLayout(false);
+	Header.className = "close-button";
+	// document.body.appendChild(Header);
+	document.body.appendChild(Header);
 	document.body.appendChild(Drawer);
+
+	const Modal = document.createElement("div");
+	Modal.className = "modal";
+	Modal.innerHTML =
+		"<div>Don't do anything. Don't TOUCH your mouse!! PS: Utkarsh add some text here. go to -> github.dev/...</div>";
+	document.body.appendChild(Modal);
 
 	// storing all the connections
 	var mutualConnections = [];
@@ -169,6 +187,7 @@ chrome.runtime.onMessage.addListener(async function (response, sendResponse) {
 	let retriesLeft = 5;
 	let startScrollHeight = -1;
 	let startScroll = window.scrollY;
+	let nayaVariable;
 
 	// debugger;
 
@@ -192,7 +211,17 @@ chrome.runtime.onMessage.addListener(async function (response, sendResponse) {
 		);
 	}, 2000);
 
-	window.addEventListener("scroll", debouncedFunc);
+	const differentFunc = () => {
+		if (nayaVariable) {
+			clearTimeout(nayaVariable);
+		}
+
+		nayaVariable = setTimeout(() => {
+			continueSearching = false;
+		}, 3000);
+	};
+
+	window.addEventListener("scroll", differentFunc);
 
 	const scrollAndScan = async () => {
 		renderListInDrawer(mutualConnections);
@@ -246,10 +275,10 @@ chrome.runtime.onMessage.addListener(async function (response, sendResponse) {
 		console.log("Scrolling and searching", currScroll, window.scrollY);
 
 		// if (currScroll === window.scrollY) {
-		if (currScroll - prevScroll !== window.innerHeight) {
+		if (!continueSearching) {
 			console.log("Done here!!");
 			continueSearching = false;
-			document.removeEventListener("click", () => {});
+			document.removeEventListener("scroll", () => {});
 			clearInterval(intervalId);
 			return;
 		}
