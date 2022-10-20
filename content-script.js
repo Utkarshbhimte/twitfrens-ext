@@ -126,6 +126,27 @@ const toggleRightLayout = (shouldOpenTwitFrens) => {
 	}
 };
 
+function debounce(func, timeout = 2000) {
+	let timer;
+	return () => {
+		clearTimeout(timer);
+		timer = setTimeout(() => {
+			func();
+		}, timeout);
+	};
+}
+
+function throttle(func, timeFrame) {
+	var lastTime = 0;
+	return function () {
+		var now = Date.now();
+		if (now - lastTime >= timeFrame) {
+			func();
+			lastTime = now;
+		}
+	};
+}
+
 chrome.runtime.onMessage.addListener(async function (response, sendResponse) {
 	// remove the existing page
 
@@ -138,8 +159,6 @@ chrome.runtime.onMessage.addListener(async function (response, sendResponse) {
 	Drawer.className = "sidepanel";
 	Drawer.id = "twitterUserList";
 	document.body.appendChild(Drawer);
-
-	const container = '[aria-labelledby="accessible-list-1"]';
 
 	// storing all the connections
 	var mutualConnections = [];
@@ -156,6 +175,21 @@ chrome.runtime.onMessage.addListener(async function (response, sendResponse) {
 	toggleRightLayout(true);
 
 	let listenerAttached = false;
+	let continueSearching = true;
+
+	let currScroll = 0;
+	let prevScroll = -1;
+
+	const throttledUpdate = debounce(() => {
+		prevScroll = currScroll;
+		currScroll = window.scrollY;
+	}, 100);
+
+	const intervalId = setInterval(() => {
+		console.log({ currScroll, prevScroll, curr: window.scrollY });
+	}, 2000);
+
+	window.addEventListener("scroll", throttledUpdate);
 
 	const scrollAndScan = async () => {
 		renderListInDrawer(mutualConnections);
@@ -164,22 +198,11 @@ chrome.runtime.onMessage.addListener(async function (response, sendResponse) {
 			const closeButton = document.getElementById("close-twitfrens");
 
 			if (closeButton) {
-				console.log("hello", { closeButton, listenerAttached });
 				listenerAttached = true;
 				closeButton.addEventListener("click", function () {
-					console.log("pringint this");
 					toggleRightLayout(false);
 				});
-				console.log("hello post", { closeButton, listenerAttached });
 			}
-		}
-
-		console.log({ retriesLeft, startScrollHeight, startScroll });
-		if (startScroll === startScrollHeight) {
-			// if (startScroll === startScrollHeight && retriesLeft === 0) {
-			console.log("Everything stopped");
-			console.log({ mutualIds, mutualConnections });
-			return;
 		}
 
 		startScrollHeight = startScroll;
@@ -213,30 +236,18 @@ chrome.runtime.onMessage.addListener(async function (response, sendResponse) {
 			top: window.scrollY + window.innerHeight,
 			behavior: "smooth",
 		});
-		await delay(100);
-		// await waitForScroll()
 
-		// await window.scrollTo(0, window.scrollY + window.innerHeight);
-
-		// check if the scroll position has changed
-		if (startScroll === window.scrollY) {
-			// console.log(
-			// 	"🚀 ~ file: content-script.js ~ line 57 ~ scrollAndScan ~ startScroll === window.scrollY",
-			// 	startScroll,
-			// 	window.scrollY,
-			// 	window.innerHeight
-			// );
-			// debugger;
-			await waitForDOMChange(container, 500);
-			// retriesLeft--;
-
-			// debugger;
-			// await window.scrollTo(0, window.scrollY + window.innerHeight);
-		} else {
-			// retriesLeft = 3
-		}
+		await delay(1000);
 
 		startScroll = window.scrollY;
+		console.log("Scrolling and searching", currScroll, window.scrollY);
+		if (currScroll === window.screenY) {
+			console.log("Done here!!");
+			continueSearching = false;
+			document.removeEventListener("click", () => {});
+			// clearInterval(interve);
+		}
+
 		await scrollAndScan();
 		await delay(0);
 	};
@@ -248,16 +259,13 @@ chrome.runtime.onMessage.addListener(async function (response, sendResponse) {
 		return;
 	}
 
-	// clear out the sidebar
-	// document.querySelectorAll('[aria-label="Trending"]')[0].innerHTML = "";
-
-	scrollAndScan();
-
-	console.log(mutualConnections);
+	if (continueSearching) {
+		scrollAndScan();
+	}
 });
 
 const delay = (millis) => {
-	new Promise((resolve, reject) => {
+	return new Promise((resolve, reject) => {
 		setTimeout((_) => resolve(), millis);
 	});
 };
@@ -302,6 +310,6 @@ const waitForScroll = () => {
 	});
 };
 
-window.addEventListener("scroll", () => {
-	console.log("scroll");
-});
+// window.addEventListener("scroll", () => {
+// 	console.log("scroll");
+// });
