@@ -66,7 +66,7 @@ const renderListInDrawer = (profilesArray) => {
               <div class="flex justify-between mb-4">
                 <p class="font-bold text-base">{mutual_no} mutual Friends</p>
                 <p class="text-[#5EBCF9] text-base font-medium flex items-center space-x-2">
-                  <span>Scanning<span>
+                  <span id="scan">Scanning<span>
                 </p>
               </div>
             </div>
@@ -277,6 +277,7 @@ chrome.runtime.onMessage.addListener(async function (response, sendResponse) {
 		// if (currScroll === window.scrollY) {
 		if (!continueSearching) {
 			console.log("Done here!!");
+			document.getElementById("scan").innerHTML = "Scanned";
 			continueSearching = false;
 			document.removeEventListener("scroll", () => {});
 			clearInterval(intervalId);
