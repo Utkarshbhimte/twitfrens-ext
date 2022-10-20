@@ -180,16 +180,19 @@ chrome.runtime.onMessage.addListener(async function (response, sendResponse) {
 	let currScroll = 0;
 	let prevScroll = -1;
 
-	const throttledUpdate = debounce(() => {
+	const debouncedFunc = debounce(() => {
 		prevScroll = currScroll;
 		currScroll = window.scrollY;
 	}, 100);
 
 	const intervalId = setInterval(() => {
-		console.log({ currScroll, prevScroll, curr: window.scrollY });
+		console.log(
+			{ currScroll, prevScroll, curr: window.scrollY },
+			currScroll - prevScroll
+		);
 	}, 2000);
 
-	window.addEventListener("scroll", throttledUpdate);
+	window.addEventListener("scroll", debouncedFunc);
 
 	const scrollAndScan = async () => {
 		renderListInDrawer(mutualConnections);
@@ -241,11 +244,14 @@ chrome.runtime.onMessage.addListener(async function (response, sendResponse) {
 
 		startScroll = window.scrollY;
 		console.log("Scrolling and searching", currScroll, window.scrollY);
-		if (currScroll === window.screenY) {
+
+		// if (currScroll === window.scrollY) {
+		if (currScroll - prevScroll !== window.innerHeight) {
 			console.log("Done here!!");
 			continueSearching = false;
 			document.removeEventListener("click", () => {});
-			// clearInterval(interve);
+			clearInterval(intervalId);
+			return;
 		}
 
 		await scrollAndScan();
