@@ -172,11 +172,11 @@ chrome.runtime.onMessage.addListener(async function (response, sendResponse) {
 	document.body.appendChild(Header);
 	document.body.appendChild(Drawer);
 
-	const Modal = document.createElement("div");
-	Modal.className = "modal";
-	Modal.innerHTML =
-		"<div>Don't do anything. Don't TOUCH your mouse!! PS: Utkarsh add some text here. go to -> github.dev/...</div>";
-	document.body.appendChild(Modal);
+	// const Modal = document.createElement("div");
+	// Modal.className = "modal";
+	// Modal.innerHTML =
+	// 	"<div>Don't do anything. Don't TOUCH your mouse!! PS: Utkarsh add some text here. go to -> github.dev/...</div>";
+	// document.body.appendChild(Modal);
 
 	// storing all the connections
 	var mutualConnections = [];
