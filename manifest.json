@@ -18,13 +18,19 @@
 	"background": {
 		"service_worker": "./background.js"
 	},
-	"permissions": ["tabs"],
 	"content_scripts": [
 		{
-			"matches": ["https://*.twitter.com/*"],
+			"matches": [
+				"https://*.twitter.com/*"
+			],
 			"run_at": "document_end",
-			"js": ["./content-script.js", "./tailwind.js"],
-			"css": ["./index.css"]
+			"js": [
+				"./content-script.js",
+				"./tailwind.js"
+			],
+			"css": [
+				"./index.css"
+			]
 		}
 	]
 }
