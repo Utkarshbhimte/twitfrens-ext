@@ -1,3 +1,6 @@
+let listenerAttached = false;
+let continueSearching = true;
+
 const renderListInDrawer = (profilesArray) => {
 	const whereToRender = document.querySelector("#twitterUserList");
 	whereToRender.innerHTML = renderList(profilesArray);
@@ -66,9 +69,9 @@ const renderListInDrawer = (profilesArray) => {
               <div class="flex justify-between mb-4">
                 <p class="font-bold text-base">{mutual_no} mutual Friends</p>
                 <p class="text-[#5EBCF9] text-base font-medium flex items-center space-x-2">
-                  <span id="scan">Scanning<span>
+				<span id="scan">Scanning<span>
                 </p>
-              </div>
+			  </div>
             </div>
             <div class="grid gap-4">
               {listComponent}
@@ -96,6 +99,7 @@ const toggleRightLayout = (shouldOpenTwitFrens) => {
 	const twimex = document.querySelector("#twemex--container div");
 	const twitfrens = document.getElementById("twitterUserList");
 	const closeButtonTwitfrens = document.querySelector(".close-button");
+	const stopButtonTwitfrens = document.querySelector(".stop-button");
 	const modalTwitFrens = document.getElementById("modal");
 
 	if (shouldOpenTwitFrens) {
@@ -116,44 +120,38 @@ const toggleRightLayout = (shouldOpenTwitFrens) => {
 		}
 
 		if (twitterSearch) {
-			twitterSearch.style.visibility = "hidden";
+			twitterSearch.style.visibility = "none";
 		}
 
 		if (twimex) {
-			twimex.style.visibility = "hidden";
+			twimex.style.visibility = "none";
 		}
 		if (closeButtonTwitfrens) {
 			document.body.removeChild(closeButtonTwitfrens);
 		}
+		if (stopButtonTwitfrens) {
+			document.body.removeChild(stopButtonTwitfrens);
+		}
 		if (modalTwitFrens) {
 			document.body.removeChild(modalTwitFrens);
 		}
+
+		continueSearching = false;
 	}
 };
 
-function debounce(func, timeout = 2000) {
-	let timer;
-	return () => {
-		clearTimeout(timer);
-		timer = setTimeout(() => {
-			func();
-		}, timeout);
-	};
-}
-
-function throttle(func, timeFrame) {
-	var lastTime = 0;
-	return function () {
-		var now = Date.now();
-		if (now - lastTime >= timeFrame) {
-			func();
-			lastTime = now;
-		}
-	};
-}
-
 chrome.runtime.onMessage.addListener(async function (response, sendResponse) {
 	// remove the existing page
+	var websiteUrl = window.location.href;
+	if (!websiteUrl.includes("following")) {
+		// console.log("Not on Following Page");
+		continueSearching = false;
+		return;
+	}
+
+	continueSearching = true;
+
+	// console.log({ continueSearching });
 
 	const existingDrawer = document.getElementById("twitterUserList");
 	if (existingDrawer) {
@@ -164,19 +162,26 @@ chrome.runtime.onMessage.addListener(async function (response, sendResponse) {
 	Drawer.className = "sidepanel";
 	Drawer.id = "twitterUserList";
 
+	// console.log({ continueSearching });
+
 	const Header = document.createElement("div");
 	Header.innerHTML = '<div id="close-twitfrens">Close</div>';
-	Header.onclick = toggleRightLayout(false);
+	Header.onclick = () => toggleRightLayout(false);
 	Header.className = "close-button";
-	// document.body.appendChild(Header);
+
+	// console.log({ continueSearching });
+
+	const StopSearch = document.createElement("div");
+	StopSearch.innerHTML = '<div id="stop-twitfrens">Stop</div>';
+	StopSearch.onclick = function () {
+		continueSearching = false;
+	};
+	StopSearch.className = "stop-button";
+	document.body.appendChild(StopSearch);
 	document.body.appendChild(Header);
 	document.body.appendChild(Drawer);
 
-	// const Modal = document.createElement("div");
-	// Modal.className = "modal";
-	// Modal.innerHTML =
-	// 	"<div>Don't do anything. Don't TOUCH your mouse!! PS: Utkarsh add some text here. go to -> github.dev/...</div>";
-	// document.body.appendChild(Modal);
+	// console.log({ continueSearching });
 
 	// storing all the connections
 	var mutualConnections = [];
@@ -193,24 +198,6 @@ chrome.runtime.onMessage.addListener(async function (response, sendResponse) {
 
 	toggleRightLayout(true);
 
-	let listenerAttached = false;
-	let continueSearching = true;
-
-	let currScroll = 0;
-	let prevScroll = -1;
-
-	const debouncedFunc = debounce(() => {
-		prevScroll = currScroll;
-		currScroll = window.scrollY;
-	}, 100);
-
-	const intervalId = setInterval(() => {
-		console.log(
-			{ currScroll, prevScroll, curr: window.scrollY },
-			currScroll - prevScroll
-		);
-	}, 2000);
-
 	const differentFunc = () => {
 		if (nayaVariable) {
 			clearTimeout(nayaVariable);
@@ -223,7 +210,15 @@ chrome.runtime.onMessage.addListener(async function (response, sendResponse) {
 
 	window.addEventListener("scroll", differentFunc);
 
+	// console.log({ continueSearching });
+
 	const scrollAndScan = async () => {
+		if (!websiteUrl.includes("following")) {
+			// console.log("Not on Following Page");
+			continueSearching = false;
+			return;
+		}
+
 		renderListInDrawer(mutualConnections);
 
 		if (!listenerAttached) {
@@ -252,7 +247,7 @@ chrome.runtime.onMessage.addListener(async function (response, sendResponse) {
 				if (mutualIds.indexOf(id) === -1) {
 					mutualIds.push(id);
 					const name = a.querySelectorAll("a")[1].innerText;
-					console.log("🚀 ~ found", name);
+					// console.log("🚀 ~ found", name);
 					mutualConnections.push({
 						name,
 						username: a.querySelectorAll("a")[2].innerText,
@@ -263,37 +258,28 @@ chrome.runtime.onMessage.addListener(async function (response, sendResponse) {
 			}
 		});
 
-		// smooth scroll to the by window hright
+		// smooth scroll to the by window height
 		window.scrollTo({
 			top: window.scrollY + window.innerHeight,
 			behavior: "smooth",
 		});
 
-		await delay(1000);
+		await delay(300);
 
 		startScroll = window.scrollY;
-		console.log("Scrolling and searching", currScroll, window.scrollY);
+		// console.log("Scrolling and searching", window.scrollY);
 
-		// if (currScroll === window.scrollY) {
 		if (!continueSearching) {
-			console.log("Done here!!");
+			// console.log("Done here!!");
 			document.getElementById("scan").innerHTML = "Scanned";
 			continueSearching = false;
 			document.removeEventListener("scroll", () => {});
-			clearInterval(intervalId);
 			return;
 		}
 
 		await scrollAndScan();
 		await delay(0);
 	};
-
-	var websiteUrl = window.location.href;
-
-	if (!websiteUrl.includes("following")) {
-		console.log("Not on Following Page");
-		return;
-	}
 
 	if (continueSearching) {
 		scrollAndScan();
@@ -347,5 +333,5 @@ const waitForScroll = () => {
 };
 
 // window.addEventListener("scroll", () => {
-// 	console.log("scroll");
+console.log("scroll");
 // });
